@@ -23,6 +23,7 @@ def handle_join(data):
 @socketio.on('play_card')
 def play_card(data):
     if not games[data["room"]]:
+        pass
 
 
 @app.route("/")
