@@ -1,11 +1,23 @@
 from random import sample, randint
 from copy import deepcopy
+
+def naipe_to_character(naipe): 
+    if  naipe=='♠':
+        return 'S'
+    elif naipe=='♥':
+        return 'H'
+    elif naipe=='♦':
+        return 'D'
+    elif naipe=='♣':
+        return 'C'
+    return naipe
+
 naipes=['♠','♥', '♦','♣']
 card_numbers=['2','3','4','5','6','Q','J','K', '7', 'A']
 inital_deck=[]
 for naipe in naipes: 
     for card_number in card_numbers: 
-        inital_deck.append({"naipe": naipe, "number": card_number})
+        inital_deck.append({"id": f"{card_number}{naipe_to_character(naipe)}","naipe": naipe, "number": card_number})
 
 value={'2': -4,'3': -3,'4': -2,'5':-1,'6': 0,'Q': 2,'J': 3,'K': 4,'7': 10,'A': 11}
 
@@ -32,18 +44,18 @@ class game:
             del self.deck[-3:]
             self.players.append(player_deck)
     
-    def is_trunfo(self, card):
+    def _is_trunfo(self, card):
         return card["naipe"]==self.trunfo
 
     def _is_more_valuable(self, card1, card2, first_naipe):
         if card1["naipe"]==card2["naipe"]:
             return value[card1["number"]] > value[card2["number"]]
-        if self.is_trunfo(card1) or self.is_trunfo(card2) :
-            return self.is_trunfo(card1)
+        if self._is_trunfo(card1) or self._is_trunfo(card2) :
+            return self._is_trunfo(card1)
         return card1["naipe"] == first_naipe
 
     def _finish_hand(self):
-        first_is_7=self.is_trunfo(self.table_deck[0]) and self.table_deck[0]["number"]=='7'
+        first_is_7=self._is_trunfo(self.table_deck[0]) and self.table_deck[0]["number"]=='7'
         is_played_A=False
         is_played_7=-1
         winner=-1
@@ -52,9 +64,9 @@ class game:
         hand_value=0
 
         for card in self.table_deck:
-            if self.is_trunfo(card) and card["number"]=='A':
+            if self._is_trunfo(card) and card["number"]=='A':
                 is_played_A=True
-            if self.is_trunfo(card) and card["number"]=='7':
+            if self._is_trunfo(card) and card["number"]=='7':
                 is_played_7=card["player"]%2
             if winner_card=={} or self._is_more_valuable(card, winner_card, initial_naipe):
                 winner=card["player"]
@@ -75,15 +87,14 @@ class game:
             for i in range(self.players_number):
                 self.players[current].append(self.deck[-1])
                 self.deck.pop()
-                print(current) 
                 current=(current+1)%self.players_number
         elif not self.players[0]:
             return self._finish_round()
         
         self.current_player_number=winner
         self.table_deck.clear()
-        return "fim da mao", self.team_score
-
+        return {"type": "hand over", "content": self.team_score}
+    
     def _finish_round(self):
         if self.team_score[0]>90:
             self.global_score[0]+=2
@@ -118,14 +129,13 @@ class game:
             del self.deck[-3:]
             self.players[current]=player_deck
             current=(current+1)%self.players_number
-        return "fim da rodada", self.global_score
-        
-        
+        return {"type": "round over", "content": self.global_score}
+               
     def _finish_game(self):
         if self.global_score[0]>=4:
-            return "fim de jogo", [2,4]
+            return {"type": "game over", "content": [2,4]}
         elif self.global_score[1]>=4:
-            return "fim de jogo", [1,3]
+            return {"type": "game over", "content": [1,3]}
         else:
             raise ValueError("Nenhum time venceu")
 
@@ -144,31 +154,36 @@ class game:
         for iterador in range(len(current_player)): 
             deck_card=current_player[iterador]
             if deck_card==card:
-                if card["number"]=='2' and self.is_trunfo(card) and self.deck:
+                if card["number"]=='2' and self._is_trunfo(card) and self.deck:
                     self.players[self.current_player_number][iterador], self.deck[0] = self.trunfo_card, card
-                    return
+                    trunfo_card=self.trunfo_card
+                    self.trunfo_card=card
+                    return {"type": "trade", "content": [card, trunfo_card]}
                 del self.players[self.current_player_number][iterador]
                 is_possible=True
                 break
         if not is_possible:
             raise ValueError("Jogador atual não possui essa carta")
         
-        if card["number"]=='7' and self.is_trunfo(card):
+        if card["number"]=='7' and self._is_trunfo(card):
             self.played_7=True
         
         self.table_deck.append(card | {"player": self.current_player_number}) 
         if len(self.table_deck)==self.players_number:
             return self._finish_hand()
         self.current_player_number=(self.current_player_number+1)%self.players_number
-
-    def get_player_state(self,player):
-        return {
-            "hand": self.players[player],
-            "regional_score": self.team_score[player%2],
-            "global_score": self.global_score[player%2],
-            "opponent_regional_score": self.team_score[(player+1)%2],
-            "opponent_global_score": self.global_score[(player+1)%2],
-            "is_your_turn": self.current_player_number==player 
+        return {"type": "none", "content": []}
+    
+    def get_general_state(self):
+        return { 
+            "deck": self.deck,
+            "trunfo": self.trunfo,
+            "team_score": self.team_score, 
+            "global_score": self.global_score, 
+            "table_deck": self.table_deck,
+            "trunfo_card": self.trunfo_card, 
+            "current_player": self.current_player_number,
+            "players": self.players
         }
 
     def clone(self):

@@ -1,0 +1,13 @@
+{
+    "tailwindCSS.includeLanguages": {
+       "html": "html",
+       "jinja-html": "html",
+       "jinja": "html",
+       "javascript": "html"
+    },
+    "editor.quickSuggestions": {
+        "strings": true
+    },
+    "headwind.runOnSave": false,
+    "emmet.triggerExpansionOnTab": true
+}

@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="en"> 
+<html lang="pt-br"> 
 
 <head>
     <meta charset="UTF-8"> 
@@ -8,8 +8,9 @@
     <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     
-  <link rel="stylesheet" href="{{url_for('static', filename='css/style.css')}}">
+  <script src="https://cdn.tailwindcss.com"></script>
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;700&family=Quicksand:wght@700&display=swap" rel="stylesheet">
+  <link href="static/css/style.css" rel="stylesheet">
    
   <script src="https://cdn.socket.io/4.8.3/socket.io.min.js" integrity="sha384-kzavj5fiMwLKzzD1f8S7TeoVIEi7uKHvbTA3ueZkrzYq75pNQUiUi6Dy98Q3fxb0" crossorigin="anonymous" defer></script>
   <script src="https://unpkg.com/vue@3/dist/vue.global.js" defer></script>
@@ -17,14 +18,10 @@
 
   {%block head_extra%}{%endblock%}  
 </head>
-<body>
+<body class="">
 
 <header>
 <!--Código do header-->
-<span class="header-line">
-<img src="static/assets/images/gear.svg" alt="setting gear" width="30" class="setting-gear">
-</span> 
-
 </header>
 
 <main>
@@ -32,9 +29,6 @@
     {%endblock%}
 </main>
 
-<footer>
-    <p>&copy; 2026 online bisca &ndash; online bisca</p>
-</footer>
 </body>
 
 </html>

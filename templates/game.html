@@ -1,5 +1,11 @@
 {% extends "layout.html" %}
 
 {%block content%}
-
+<div id="app">
+    <div class="relative w-full h-screen  bg-gradient-to-br from-green-900 via-green-700 to-green-800 shadow-[inset_0_0_100px_rgba(0,0,0,0.6)]">
+        <players-deck :player-id="id" :players-deck-size="playersDeckSize" :player-deck="playerDeck" class="absolute inset-0 z-50"></players-deck>
+        <discart-stack :table-deck="tableDeck" :player-id="id" class="absolute inset-0 z-10"></discart-stack>
+        <deck :deck-size="deckSize" class="absolute left-[35%] top-[25%] z-20"></deck>
+    </div>
+</div>
 {%endblock%}

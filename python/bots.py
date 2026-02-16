@@ -10,6 +10,7 @@ def medium_bot(hand, table_deck, trunfo):
         card["naipe"]!=trunfo,
         value[card["number"]])
         )
+    return choice(hand)
     
 
 def hard_bot(hand, table_deck, trunfo, played_cards):
