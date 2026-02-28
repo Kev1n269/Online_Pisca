@@ -133,7 +133,7 @@ class game:
             del self.deck[-3:]
             self.players[current]=player_deck
             current=(current+1)%self.players_number
-        return {"type": "round over", "content":{'score': self.global_score, 'current_player': self.current_player_number}}
+        return {"type": "round over", "content":self.get_general_state()}
                
     def _finish_game(self):
         if self.global_score[0]>=4:

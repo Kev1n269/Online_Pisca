@@ -1,7 +1,7 @@
 {% extends "layout.html" %}
 
 {%block content%}
-<div id="app">
+<div id="app" v-cloak>
     <div class="relative w-full h-screen overflow-hidden  bg-gradient-to-br from-green-900 via-green-700 to-green-800 shadow-[inset_0_0_100px_rgba(0,0,0,0.6)]">
         <players-deck :player-id="id" :players-cards-uid="playersCardsUid" :player-deck="playerDeck" @play-card="playCard" class="absolute inset-0 z-50"></players-deck>
         <discart-stack :deck="tableDeck" :player-id="id" class="absolute inset-0 z-10"></discart-stack>

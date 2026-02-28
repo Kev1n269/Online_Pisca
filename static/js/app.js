@@ -1,4 +1,4 @@
-const {createApp, ref, reactive, component, computed, nextTick} = Vue;
+const {createApp,onMounted,  ref, reactive, component, computed, nextTick} = Vue;
 
 const socket=io("http://localhost:8080")
 
@@ -234,6 +234,8 @@ const app=createApp({
 
         socket.on('play-card', data=>{
             addInQueue(async ()=>{
+            ownTeamScore['global']=data['score'][id.value%2]; 
+            opponentTeamScore['global']=data['score'][(id.value+1)%2]; 
             if(currentPlayer.value!==id.value)
                 playersCardsUid.value[currentPlayer.value].pop();
             tableDeck.value.push({"id": data['card'], "player": currentPlayer.value});
@@ -269,6 +271,8 @@ const app=createApp({
         });
 
         async function collectTableDeck(data){
+            ownTeamScore.value["global"]=data["global_score"][id.value%2];
+            opponentTeamScore.value["global"]=data["global_score"][(id.value+1)%2];
             if (playedCards.value[0]<data['gained_cards'][0])
                 lastWinner=0;
             else 
@@ -300,13 +304,12 @@ const app=createApp({
         });
 
         socket.on("end-round", data=>{
+            addInQueue(()=>collectTableDeck(data)); 
             addInQueue(()=>{
-              console.log("round finalizado!", data['score']);
+            console.log("round finalizado!", data['global_score']);
             currentPlayer.value=data['current_player']; 
-            setTimeout(()=>{
-                socket.emit('end_round', room.value); 
-            },1000);  
-            })
+            socket.emit('end_round', room.value);   
+            });
         });
 
         socket.on('end-game', data=>{
@@ -582,7 +585,7 @@ required: true
 },
 template: `
 <div class="h-full w-full"> 
-    <div class="fixed top-8 left-36 border-4 border-double bg-stone-900 border-orange-500 bg-gr-500 rounded-lg p-3 shadow-lg  w-40 flex-col">
+    <div class="fixed top-8 left-36 border-4 border-double bg-stone-900 border-orange-500 bg-gr-500 rounded-lg p-3 text-base shadow-lg  w-40 flex-col">
         <p class="text-emerald-400 font-bold">Seu time: ((ownTeamScore))</p>
         <hr class="border-t-2 border-yellow-700 my-2"/>
         <p class="text-red-400 font-bold">Adversários: ((opponentTeamScore))</p>
@@ -638,7 +641,7 @@ v-for="(deckSize,index) in playedCards"
 >
 <div class="relative inline-block">
 <deck :deck-size="deckSize" :id="'player-stack-'+index"></deck>
-<p v-if="deckSize!==0" class="absolute left-1/2 top-1/2 z-50 -translate-x-1/2 -translate-y-1/2 bg-black/15  text-white tracking-tight text-[0.9rem] drop-shadow-[0_3px_0px_rgba(0,0,0,1)] font-bold">
+<p v-if="deckSize!==0" class="absolute left-1/2 top-1/2 z-50 -translate-x-1/2 -translate-y-1/2 bg-black/15  text-white tracking-tight text-base drop-shadow-[0_3px_0px_rgba(0,0,0,1)] font-bold">
 ((score[index]))
 </p>
 </div>

@@ -24,7 +24,7 @@ def process_play(room, player_id, card):
         if output_type!="trade":
             if players_type[room][player_id]=="player":
                 socketio.emit('player-play-card',card['id'], to=players_sid_reverse[room][player_id])
-            socketio.emit('play-card', {'card': card['id'], 'next_player': games[room].current_player_number}, room=room)
+            socketio.emit('play-card', {'card': card['id'], 'next_player': games[room].current_player_number, "score": games[room].global_score}, room=room)
         if output_type=="game over":
             print(f"Fim de jogo! na room {room}\n jogadores {output_data[0]} e {output_data[1]} ganharam!")
             socketio.emit ('end-game', output_data, room=room)
