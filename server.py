@@ -2,6 +2,7 @@ from flask import Flask, render_template, redirect, url_for, request
 from flask_socketio import SocketIO, emit, join_room, leave_room 
 from python.bisca_logic import game
 from python.bots import easy_bot, medium_bot, hard_bot
+from threading import Lock
 
 app=Flask(__name__)
 socketio = SocketIO(app, cors_allowed_origins='*')
@@ -14,8 +15,11 @@ players_sid={}
 players_sid_reverse={}
 game_started={}
 host={}
+rooms_lock={}
 
-
+def get_room_lock(room):
+    rooms_lock.setdefault(room,Lock())
+    return rooms_lock[room]
 
 def process_play(room, player_id, card): 
     try:
@@ -45,14 +49,18 @@ def process_play(room, player_id, card):
         return "illegal-play"
 
 def bot_turn(room, player_id):
-    hand=games[room].players[player_id]
-    trunfo=games[room].trunfo
-    table_deck=games[room].table_deck
-    card=bots[players_type[room][player_id]](hand,table_deck,trunfo)
-    output_type=process_play(room, player_id, card)
-    next_player=games[room].current_player_number
-    if players_type[room][next_player]!="player" and output_type not in ("game over", "round over"): 
-        socketio.start_background_task(bot_turn,room,next_player)
+    with get_room_lock(room):
+        hand=games[room].players[player_id]
+        trunfo=games[room].trunfo
+        table_deck=games[room].table_deck
+        played_7=games[room].played_7
+        played_cards=games[room].played_cards
+        deck_size=len(games[room].deck)
+        card=bots[players_type[room][player_id]](hand,table_deck,trunfo, played_7, deck_size, played_cards)
+        output_type=process_play(room, player_id, card)
+        next_player=games[room].current_player_number
+        if players_type[room][next_player]!="player" and output_type not in ("game over", "round over"): 
+            socketio.start_background_task(bot_turn,room,next_player)
 
 
 @socketio.on("join_room")
@@ -60,34 +68,38 @@ def handle_join(data):
     room=data['room']
     print(f"inciando entrada na sala {room}...")
     join_room(room)
-    if room not in games:
-        players_id[room]=[]
-        games[room]=None
-        players_type[room]=["medium_bot","medium_bot","medium_bot","medium_bot"]
-        game_started[room]=False
-        players_sid_reverse[room]={}
-        host[room]=0
-    is_full=True
-    for id in range(4): 
-        if id not in players_id[room] or players_type[room][id]!="player":
-            players_id[room].append(id)
-            player_id=id
-            is_full=False
-            break
-    if is_full:
-        emit("full-room", room)
-        print('full room', room)
-        return
-    players_type[room][id]="player"
-    for id in players_id[room]:
-        if id != player_id:
-            emit('new-player', id)
-    players_sid[request.sid]={
-        "room": room,
-        "id": player_id
-    }
-    players_sid_reverse[room][player_id]= request.sid
+
+    with get_room_lock(room):
+        if room not in games:
+            players_id[room]=[]
+            games[room]=None
+            players_type[room]=["medium_bot","medium_bot","medium_bot","medium_bot"]
+            game_started[room]=False
+            players_sid_reverse[room]={}
+            host[room]=0
+        is_full=True
+        for id in range(4): 
+            if id not in players_id[room] or players_type[room][id]!="player":
+                players_id[room].append(id)
+                player_id=id
+                is_full=False
+                break
+        if is_full:
+            emit("full-room", room)
+            print('full room', room)
+            return
+        players_type[room][id]="player"
+        for idx in players_id[room]:
+            if idx != player_id:
+                emit('new-player', idx)
+        players_sid[request.sid]={
+            "room": room,
+            "id": player_id
+        }
+        players_sid_reverse[room][player_id]= request.sid
+
     emit('inital-data', {"id": player_id, "is_host": host[room]==player_id, "game_starded": game_started[room]})
+    emit('get-initial-player-type', players_type[room]) 
     emit('new-player', player_id, room=room, broadcast=True)
     if game_started[room]:
         emit('get-game-state', games[room].get_general_state())
@@ -95,52 +107,64 @@ def handle_join(data):
     
 @socketio.on('start_game')
 def start_game(room):
-    if room not in games:
-        print("sala não encontrada")
-        emit("error",{
-            'message': 'sala nao existe',
-            'code': "ROOM_NOT_FOUND"  
-        })
-        return
-    games[room]=game(host[room])
-    game_started[room]=True
-    emit('shuffle', room=room)
-    emit('get-game-state', games[room].get_general_state())
-    current_player=games[room].current_player_number
+    with get_room_lock(room):
+        if room not in games or (not games[room] is None and game_started[room]):
+            return
+        games[room]=game(host[room])
+        game_started[room]=True
+        emit('shuffle', room=room)
+        emit('get-game-state', games[room].get_general_state())
+        current_player=games[room].current_player_number
+    
     if players_type[room][current_player] !="player": 
         socketio.start_background_task(bot_turn, room, current_player)
 
 @socketio.on('play_card')
 def play_card(data):
-    if data['room'] not in games:
-        emit('error',{
-             'message': 'sala nao existe',
-             'code': "ROOM_NOT_FOUND"   
-        })
-        return
-    if data['player_id']!=games[data["room"]].current_player_number:
-        emit('error',{
-            'message': 'não é a vez desse jogador',
-             'code': "INCORRECT_PLAYER"   
-        })
-        return
-    output_type=process_play(data["room"], data["player_id"], data["card"])     
-    next_player=games[data['room']].current_player_number
+    with get_room_lock(data['room']):
+        if data['room'] not in games:
+            emit('error',{
+                'message': 'sala nao existe',
+                'code': "ROOM_NOT_FOUND"   
+            })
+            return
+        if data['player_id']!=games[data["room"]].current_player_number:
+            emit('error',{
+                'message': 'não é a vez desse jogador',
+                'code': "INCORRECT_PLAYER"   
+            })
+            return
+        output_type=process_play(data["room"], data["player_id"], data["card"])     
+        next_player=games[data['room']].current_player_number
+    
     if players_type[data['room']][next_player]!="player" and output_type not in("game over","round over"): 
         socketio.start_background_task(bot_turn,data['room'],next_player)
 
 @socketio.on('end_round')
-def handle_end_round(room): 
-    emit('shuffle', room=room)
-    emit('get-game-state', games[room].get_general_state())
-    next_player=games[room].current_player_number
-    if players_type[room][next_player]!="player": 
-        socketio.start_background_task(bot_turn,room,next_player)
+def handle_end_round(room):
+    with get_room_lock(room):
+        emit('shuffle', room=room)
+        emit('get-game-state', games[room].get_general_state())
+        next_player=games[room].current_player_number
+        if players_type[room][next_player]!="player": 
+            socketio.start_background_task(bot_turn,room,next_player)
 
 @socketio.on('finish_game')
 def handle_finish_game(room): 
-    game_started[room]=False
-    games[room]=None
+    with get_room_lock(room):
+        game_started[room]=False
+        games[room]=None
+
+@socketio.on('change_bot')
+def handle_change_bot(room, id, new_type):
+    with get_room_lock(room):
+        players_type[room][id]=new_type 
+
+@socketio.on("request_state")
+def handle_request_state(room):
+    with get_room_lock(room):
+        if games[room]:
+            emit('get-game-state', games[room].get_general_state())
 
 @socketio.on('disconnect')
 def handle_disconnect():
@@ -148,21 +172,23 @@ def handle_disconnect():
         print("Jogador não encontrado")
         return 
     room, id=players_sid[request.sid]["room"],players_sid[request.sid]["id"]
-    del players_id[room][id] 
-    del players_sid_reverse[room][id]
-    leave_room(room)
-    del players_sid[request.sid]
-    players_type[room][id]="medium_bot"
-    print(f"jogador com id {id} na sala {room} desconectado")
-    if not players_id[room]: 
-        game_started[room]=False
-        games[room]=None
-    elif host[room]==id:
-        for idx in range(4):
-            if players_type[room][idx]=='player':
-                host[room]=idx
-                socketio.emit('to-host', to=players_sid_reverse[room][idx])
-                break
+    with get_room_lock(room):
+        players_id[room].remove(id) 
+        del players_sid_reverse[room][id]
+        leave_room(room)
+        del players_sid[request.sid]
+        players_type[room][id]="medium_bot"
+        print(f"jogador com id {id} na sala {room} desconectado")
+        if not players_id[room]: 
+            game_started[room]=False
+            games[room]=None
+        elif host[room]==id:
+            for idx in range(4):
+                if players_type[room][idx]=='player':
+                    host[room]=idx
+                    socketio.emit('to-host', to=players_sid_reverse[room][idx])
+                    break
+        socketio.emit('to-bot', id, room=room)
         
 @app.route("/")
 def index():

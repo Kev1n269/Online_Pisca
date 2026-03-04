@@ -20,6 +20,16 @@ const positionConfig={
     "top": "absolute top-8 left-1/2 -translate-x-1/2 flex gap-2", 
     "left": "absolute left-48 top-1/2 -translate-y-1/2 flex flex-col gap-2", 
 },
+"change-bot-container":{
+    "right": "absolute right-96 top-1/2 -translate-y-1/2 ",
+    "top": "absolute top-36 left-1/2 -translate-x-1/2", 
+    "left": "absolute left-72 top-1/2 -translate-y-1/2", 
+},
+"change-bot-container-finished-game":{
+    "right": "absolute right-48 top-1/2 -translate-y-1/2 ",
+    "top": "absolute top-28 left-1/2 -translate-x-1/2", 
+    "left": "absolute left-48 top-1/2 -translate-y-1/2", 
+},
 "card":{
     "bottom": "w-[84px] h-[124px] pixel-art shadow-2xl rounded cursor-pointer transition-transform duration-100 hover:-translate-y-5",
     "right": "w-[63px] h-[93px] pixel-art shadow-2xl rounded",
@@ -130,8 +140,9 @@ requestAnimationFrame(()=>{
  
 const stackReact=stack.getBoundingClientRect(); 
 const cardReact=card.getBoundingClientRect(); 
-
-const stackDeg=lastWinner===ThisPlayerTeam ? 0 : -90;
+const timeAng=ThisPlayerTeam===0 ? 0 : -90;
+const opponentAng=ThisPlayerTeam===0 ? -90 : 0; 
+const stackDeg=lastWinner===ThisPlayerTeam ? timeAng : opponentAng;
 let deltaX=(stackReact.left+stackReact.width/2)-(cardReact.left+cardReact.width/2);
 let deltaY=(stackReact.top+stackReact.height/2)-(cardReact.top+cardReact.height/2);
 if(team===ThisPlayerTeam){
@@ -151,7 +162,10 @@ setTimeout(done, 1200);
 
 }
 
-const wait=(ms)=>new Promise(resolve => setTimeout(resolve,ms)); 
+const wait=(ms)=>new Promise(resolve => {
+    if(document.hidden) {resolve(); return;}
+    setTimeout(resolve,ms);
+}); 
 
 let global_card_counter=0; 
 
@@ -169,7 +183,7 @@ const processQueue=async()=>{
         const fn=globalActionQueue.shift(); 
         await fn(); 
         isProcessing=false; 
-        processQueue(); 
+        await processQueue(); 
 }
 
 const app=createApp({
@@ -177,7 +191,9 @@ const app=createApp({
         const room=ref(1);
         console.log("conectando com o servidor...");
         socket.emit('join_room', {'room': room.value});
+        const isFinishedOnce=ref(false);
         const trunfoCard=ref("");   
+        const playersType=ref([],[],[],[]); 
         const deckSize=ref(40); 
         const playerDeck=ref([]);
         const ownTeamScore=ref({"regional": 0, "global": 0});
@@ -203,6 +219,10 @@ const app=createApp({
             gameStarded.value=data["game_starded"];
             ThisPlayerTeam=id.value%2; 
         });
+        
+        socket.on('get-initial-player-type', data=>playersType.value=data);
+        socket.on('new-player', data=>playersType.value[data]="player"); 
+        socket.on('to-bot', data=>playersType.value[data]="medium_bot"); 
 
         socket.on('to-host', ()=>{
             isHost.value=true;
@@ -235,13 +255,13 @@ const app=createApp({
 
         socket.on('play-card', data=>{
             addInQueue(async ()=>{
-            ownTeamScore['global']=data['score'][id.value%2]; 
-            opponentTeamScore['global']=data['score'][(id.value+1)%2]; 
+            ownTeamScore.value['global']=data['score'][id.value%2]; 
+            opponentTeamScore.value['global']=data['score'][(id.value+1)%2]; 
             if(currentPlayer.value!==id.value)
                 playersCardsUid.value[currentPlayer.value].pop();
             tableDeck.value.push({"id": data['card'], "player": currentPlayer.value});
             currentPlayer.value=data['next_player']; 
-            await wait(800); 
+            await wait(1000); 
             });
         });
 
@@ -258,7 +278,7 @@ const app=createApp({
         });
 
         socket.on('trade', data=>{
-            addInQueue(()=>{
+            addInQueue(async ()=>{
             if (data["player_id"]===id.value){
                 for(let cardIdx=0;cardIdx<playerDeck.value.length;cardIdx++){
                     if (playerDeck.value[cardIdx]['id']===data['new_trunfo_card']['id']){
@@ -268,16 +288,14 @@ const app=createApp({
                 }
             }
             trunfoCard.value=data['new_trunfo_card']['id'];
+            await wait(800); 
             });
         });
 
         async function collectTableDeck(data){
             ownTeamScore.value["global"]=data["global_score"][id.value%2];
             opponentTeamScore.value["global"]=data["global_score"][(id.value+1)%2];
-            if (playedCards.value[0]<data['gained_cards'][0])
-                lastWinner=0;
-            else 
-                lastWinner=1; 
+            lastWinner=data['last_winner']; 
             tableDeck.value=[]; 
             await wait(1200);
             playedCards.value=data["gained_cards"];
@@ -299,13 +317,14 @@ const app=createApp({
                 trunfoCard.value=""; 
             await wait(500); 
         }
-        socket.on('end-hand', data=>{
+        socket.on('end-hand', data=>{ 
             addInQueue(()=>collectTableDeck(data)); 
            addInQueue(()=>playersGetCardsFromDeck(data)); 
         });
 
         socket.on("end-round", data=>{
             addInQueue(()=>collectTableDeck(data)); 
+            addInQueue(async()=>wait(300));
             addInQueue(()=>{
             console.log("round finalizado!", data['global_score']);
             currentPlayer.value=data['current_player']; 
@@ -317,11 +336,12 @@ const app=createApp({
             addInQueue(()=>collectTableDeck(data)); 
             addInQueue(()=>{
             console.log("Fim de jogo!\nvencedores:", data);
+            isFinishedOnce.value=true; 
             playedCards.value=[0,0];
             deckSize.value=40; 
             endGame.value=true;
             winners.value=data['winners']; 
-            if(winners.value[0]==id.value%2)
+            if(winners.value[0]===id.value%2)
                 winnerText.value="Parabéns! Você venceu!";
             else
                 winnerText.value="Que pena. Você perdeu!";
@@ -404,8 +424,21 @@ const app=createApp({
             socket.emit('play_card', data); 
         }
 
-    return {room, id, trunfoCard, deckSize, playerDeck, ownTeamScore, opponentTeamScore, tableDeck, currentPlayer, playersCardsUid,
-            isShuffling, playedCards, isHost, gameStarded, mainDeckSize, endGame, winners, winnerText, startGame,  playCard}
+        const changeBot=(idx, bot)=>{ 
+            playersType.value[idx]=bot;
+            socket.emit('change_bot', room.value, idx, bot);
+        }
+
+    document.addEventListener('visibilitychange', ()=>{
+        if (document.visibilityState === 'visible' && gameStarded.value){
+            globalActionQueue=[];
+            isProcessing=false
+            socket.emit('request_state', room.value); 
+        }
+        });
+
+    return {room, id, trunfoCard, deckSize, playerDeck, ownTeamScore, opponentTeamScore, tableDeck, currentPlayer, playersCardsUid,changeBot,
+isShuffling, playedCards, isHost, gameStarded, mainDeckSize, endGame, winners, winnerText, playersType, isFinishedOnce, startGame,  playCard}
     }
 });
 
@@ -600,7 +633,7 @@ name="player-hand"
 @leave="leave"
 :class="difContainerStyle[id]"
 >
-<div v-for="(uid,index) in playersCardsUid[id]" :key="uid" class="inline-block" :id="'player-hand-'+id+'-'+index">
+<div v-for="(uid,index) in playersCardsUid[id]" :key="id===playerId ? playerDeck[index]['id'] : uid" class="inline-block" :id="'player-hand-'+id+'-'+index">
 <div :class="difCardWrapperStyle[id]">
 <img 
 :src="'static/assets/cards/' + (id===playerId ? playerDeck[index]['id'] : 'CardBack_v12') +'.png'"
@@ -693,6 +726,81 @@ v-for="(deckSize,index) in playedCards"
 `
 }); 
 
-app.config.compilerOptions.delimiters = ['((', '))']
+app.component("change-bot", {
+   props: {
+    playerId: {
+        type: Number, 
+        required: true
+    }, 
+    playersType: {
+        type: Array, 
+        required: true 
+    },
+    isFinishedOnce: {
+        type: Boolean,
+        required: true
+    } 
+},
+setup(props, {emit}){
+const difContainerStyle=computed(()=>{
+    let dif=[];
+    const containerStyle=props.isFinishedOnce ?positionConfig['change-bot-container-finished-game'] : positionConfig["change-bot-container"];
+    for(let id=0;id<=3;id++){
+        let relativePosition=getRelativePosition(props.playerId, id); 
+        dif.push(containerStyle[relativePosition]); 
+}
+    return dif; 
+});
+
+const ids=[0,1,2,3];
+const showMenu=ref([false,false,false,false]); 
+const to_portuguese=(text)=>{
+if(text==="easy_bot") return "Fácil"
+else if(text==="medium_bot") return "Médio"
+else if(text==="hard_bot") return "Difícil"
+else return text
+}
+const levels=["easy_bot", "medium_bot", "hard_bot"]
+const selectBot=(id, bot)=>{
+emit('changeBot', id, bot);
+}
+const menuCloseTimer=[null,null,null,null];
+const startCloserTimer=(id)=>{
+menuCloseTimer[id]=setTimeout(()=>{
+showMenu.value[id]=false; 
+},200);
+}
+const cancelCloserTimer=(id)=>{
+clearTimeout(menuCloseTimer[id]); 
+}
+return {difContainerStyle, ids, showMenu, levels, to_portuguese, selectBot, startCloserTimer, cancelCloserTimer}
+},
+template: `
+<div class="w-full h-full">
+<div v-for="id in ids" :key="id">
+
+<div v-if="playersType[id]!=='player'" @mouseenter="cancelCloserTimer(id)" @mouseleave="startCloserTimer(id)" :class="difContainerStyle[id] + ' z-50' ">
+<button @click="showMenu[id]=!showMenu[id]" class="px-3 py-1 text-base text-amber-200 font-semibold bg-green-800 border-2 border-amber-400/60 rounded-full shadow-md hover:bg-green-700 hover:border-amber-400/90 ring-1 ring-amber-200/40 transition-all duration-150 cursor-pointer">
+(( playersType[id] == 'player' ? '' : 'Bot de nível ' + to_portuguese(playersType[id]) ))
+</button>
+
+<div v-show="showMenu[id]" @mouseenter="cancelCloserTimer(id)" @mouseleave="startCloserTimer(id)" class="absolute translate-x-4 translate-y-2 flex flex-col gap-1 p-2 w-24 bg-green-900/90 border border-double border-amber-400/30 rounded-lg shadow-xl ring-1 ring-amber-300/50 transition-all duration-300 cursor-pointer"> 
+<button v-for="level in levels" :key="level" @click="selectBot(id,level)" :class="[
+'w-full px-2 py-1 text-sm rounded transition-colors duration-150 cursor-pointer',
+level===playersType[id] 
+? 'text-amber-400 font-bold hover:bg-green-700/60' 
+: 'text-amber-100 hover:bg-green-700/60'
+]">
+(( to_portuguese(level) ))
+</button>
+</div>
+
+</div>
+</div>
+</div>
+`
+});
+
+app.config.compilerOptions.delimiters = ['((', '))'];
 app.mount('#app');
 

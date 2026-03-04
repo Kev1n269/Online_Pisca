@@ -14,8 +14,10 @@
         <transition name="endGame">
             <div v-if="endGame" class="absolute inset-0 z-40 flex flex-col items-center justify-center gap-4 bg-black/40">
                 <p class="-translate-y-12 text-amber-400 uppercase tracking-widest text-2xl">Fim de jogo</p>
-                <h1 class="-translate-y-12 text-6xl text-amber-500   font-bold" style="font-family: Georgia, 'Times New Roman', Times, serif;">((winnerText))</h1>
+                <h1 class="-translate-y-12 text-6xl text-amber-500 font-bold" style="font-family: Georgia, 'Times New Roman', Times, serif;">((winnerText))</h1>
             </div>
         </transition>
+        <h1 v-if="!isHost && !gameStarded && !isFinishedOnce" class="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 text-3xl font-bold text-amber-400/90 tracking-widest drop-shadow-lg">Esperando o host iniciar a partida...</h1>
+        <change-bot v-if="isHost && !gameStarded" :player-id="id" :players-type="playersType" :is-finished-once="isFinishedOnce" @change-bot="changeBot" class="absolute inset-0"></change-bot>
 </div>
 {%endblock%}

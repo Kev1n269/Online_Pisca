@@ -25,6 +25,7 @@ class game:
     def __init__(self, initial_player=0, players_number=4):
         self.players_number=players_number
         self.initial_player=initial_player
+        self.first_winner=None
         self.deck=sample(inital_deck, len(inital_deck))
         self.players=[]
         self.team_score=[0,0] 
@@ -32,6 +33,7 @@ class game:
         self.table_deck=[]
         self.played_cards=[]
         self.gained_cards=[0,0]
+        self.last_winner_team=None
         while True:
             random_card=randint(0, len(self.deck)-1)
             if self.deck[random_card]["number"] not in ('7','A'):   
@@ -77,6 +79,7 @@ class game:
 
         self.team_score[winner%2]+=hand_value
         self.gained_cards[winner%2]+=len(self.table_deck)
+        self.last_winner_team=winner%2 
         if is_played_A and is_played_7!=-1:
             if winner%2!=is_played_7:
                 self.global_score[winner%2]+=2
@@ -90,6 +93,8 @@ class game:
                 current=(current+1)%self.players_number
         elif not self.players[0]:
             return self._finish_round()
+        if self.global_score[winner%2]>4:
+            self.first_winner=winner%2
         
         self.current_player_number=winner
         self.table_deck.clear()
@@ -134,10 +139,12 @@ class game:
         return {"type": "round over", "content":self.get_general_state()}
                
     def _finish_game(self):
+        if not self.first_winner is None:
+             return {"type": "game over", "content": self.get_general_state() | {'winners': [self.first_winner+1,self.first_winner+3]}}
         if self.global_score[0]>=4:
-            return {"type": "game over", "content": self.get_general_state() | {'winners': [1,3]}}
+            return {"type": "game over", "content": self.get_general_state() | {'winners': [0,2]}}
         elif self.global_score[1]>=4:
-            return {"type": "game over", "content": self.get_general_state() | {'winners': [2,4]}}
+            return {"type": "game over", "content": self.get_general_state() | {'winners': [1,3]}}
         else:
             raise ValueError("Nenhum time venceu")
 
@@ -146,8 +153,12 @@ class game:
             raise ValueError("Mesa cheia")
         
         current_player=self.players[self.current_player_number]
+        have_A=False
+        for playerCard in current_player:
+            if playerCard['number']=='A' and playerCard['naipe']==self.trunfo:
+                have_A=True
         if card["naipe"]==self.trunfo:
-            if card["number"]=='7' and len(self.table_deck)==3 and len(current_player)==3:  
+            if card["number"]=='7' and len(self.table_deck)==3 and (len(current_player)==3 or (have_A and len(current_player)>=2)):  
                 raise ValueError("7 jogado no pé")
             if card["number"]=='A' and not self.played_7 and len(current_player)!=1: 
                 raise ValueError("Ás jogado antes do 7")
@@ -188,7 +199,8 @@ class game:
             "current_player": self.current_player_number,
             "players": self.players,
             "played_cards": self.played_cards,
-            "gained_cards": self.gained_cards
+            "gained_cards": self.gained_cards,
+            "last_winner":self.last_winner_team
         }
 
     def clone(self):
