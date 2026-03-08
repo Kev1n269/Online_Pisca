@@ -9,7 +9,7 @@ from threading import Lock
 import os
 
 app=Flask(__name__)
-socketio = SocketIO(app, cors_allowed_origins='*', async_mode="eventlet")
+socketio = SocketIO(app, cors_allowed_origins='*', async_mode="eventlet", ping_timeout=60, ping_interval=25)
 
 bots={"easy_bot": easy_bot, "medium_bot": medium_bot,"hard_bot": hard_bot}
 games={}
