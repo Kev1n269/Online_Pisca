@@ -10,7 +10,7 @@ An online card game for 4 players (2 against 2) called “Bisca.” This is a lo
 
 ## 📜 Rules 
 
-The order of the cards from lowest to highest is **2, 3, 4, 5, 6, Q, J, K, 7, A** (there are no 8, 9, or 10). The cards with value are only Q, J, K, 7, and A, with respective values of 2, 3, 4, 10, and 11 points, which implies that the total number of points is 120.
+The order of the cards from lowest to highest is **2, 3, 4, 5, 6, Q, J, K, 7, A** (there are no 8, 9, or 10). The cards with value are only **Q, J, K, 7, and A**, with respective values of **2, 3, 4, 10, and 11 points**, which implies that the total number of points is 120.
 
 The game begins with the removal of a card to represent the trump suit, which cannot be an A or a 7, then each player receives 3 cards and the game begins. In each hand, each player plays starting with the winner of the last hand. Whoever plays the highest trump card wins. If there are no trump cards on the table, the highest card of the suit of the first card played on the table in that hand wins. At the end of a hand, the winning player takes the cards and places them in their pile, everyone buys a card (if the deck is not empty), and they start the next hand. This process is repeated until all cards have been played. The team with the most points wins 1 overall point. If one of the teams has more than 90 points, it is a “capote” and they win 2 overall points. After that, the game restarts. The first team to win 4 overall points wins 
  
