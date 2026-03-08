@@ -3,9 +3,9 @@
 An online card game for 4 players (2 against 2) called “Bisca.” This is a local version of the game with several rules that differ from the original. It is a version from Espírito Santo, a state in Brazil. 
 
 ## 🎮 How to play 
-1. ***enter the game at*** "link do jogo"
-2. choice a room to enter
-3. start the game with bots or wait other people enter in the room
+1. ***enter the game at*** https://online-bisca.onrender.com
+2. chooce a room to enter
+3. start the game with bots or wait for other people to enter in the room
 4. Have fun!
 
 ## 📜 Rules 
