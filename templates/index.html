@@ -1,12 +1,34 @@
 {%extends "layout.html"%}
 
+{%block head_extra%}
+<script src="{{url_for('static', filename='js/index_page.js')}}" defer></script>
+{%endblock%}
+
 {%block content%}
-<div class="main-page">
-    <h1 id="title">Bisca</h1>
-    <div class="play-buttons">
-    <a href="url_for('static', filename='example.html')"><button type="button">Play with Bot</button></a>
-    <a href="url_for('static', filename='example.html')"><button type="button">Play Online</button></a>
-    </div>
-    <div id="app"><h1>[[name.toUpperCase()]]</h1></div>
+<div id="app" v-cloak>
+<div class="relative min-h-screen bg-gradient-to-br from-green-900 via-green-700 to-green-800 shadow-[inset_0_0_100px_rgba(0,0,0,0.6)] py-16">
+<h1 class="text-center text-4xl font-bold text-amber-400/90 tracking-widest uppercase drop-shadow-[0_3px_0_rgba(0,0,0,1)]" style="font-family: Georgia, 'Times New Roman', Times, serif;">
+    Bisca
+</h1>
+
+<div class="grid grid-cols-3 gap-20 px-8 mt-24 ">
+<a v-for="(table,index) in tables" :key="index" :href="'/game/'+table['id']" class="group cursor-pointer hover:scale-105">
+
+<div class="relative w-full overflow-hidden aspect-video border-4 border-yellow-950 bg-green-900/60 group-hover:bg-green-800/60 shadow-[inset_0_0_40px_rgba(0,0,0,0,0.6), 0_8px_24px_rgba(0,0,0,0,0.5)]  rounded-xl">
+    <div class="absolute inset-0 rounded-lg border-8 border-yellow-900  bg-gradient-to-br from-green-800/40 to-transparent"></div>   
+    <div class="absolute inset-2 rounded-xl border-2 border-green-600/30"></div>
+
+</div>
+
+<p class="text-center text-yellow-400/70 text-sm font-semibold mt-3 drop-shadow-[0_2px_0_rgba(0,0,0,1)] tracking-wide">
+    Mesa ((index+1))
+</p>
+<p class="text-center text-yellow-400 text-sm font-semibold mt-3 drop-shadow-[0_2px_0_rgba(0,0,0,1)] tracking-wide">
+    ((table['size']))/4 jogadores
+</p>
+
+</a>
+</div>
+</div>
 </div>
 {%endblock%}

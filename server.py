@@ -1,11 +1,15 @@
+import eventlet
+eventlet.monkey_patch()
+
 from flask import Flask, render_template, redirect, url_for, request
 from flask_socketio import SocketIO, emit, join_room, leave_room 
 from python.bisca_logic import game
 from python.bots import easy_bot, medium_bot, hard_bot
 from threading import Lock
+import os
 
 app=Flask(__name__)
-socketio = SocketIO(app, cors_allowed_origins='*')
+socketio = SocketIO(app, cors_allowed_origins='*', async_mode="eventlet")
 
 bots={"easy_bot": easy_bot, "medium_bot": medium_bot,"hard_bot": hard_bot}
 games={}
@@ -16,6 +20,10 @@ players_sid_reverse={}
 game_started={}
 host={}
 rooms_lock={}
+tables=[]
+max_rooms=30
+for i in range(max_rooms):
+    tables.append({'size': 0, 'game_started': False, 'id': i}) 
 
 def get_room_lock(room):
     rooms_lock.setdefault(room,Lock())
@@ -56,7 +64,11 @@ def bot_turn(room, player_id):
         played_7=games[room].played_7
         played_cards=games[room].played_cards
         deck_size=len(games[room].deck)
-        card=bots[players_type[room][player_id]](hand,table_deck,trunfo, played_7, deck_size, played_cards)
+        team_score=games[room].team_score
+        global_score=games[room].global_score
+        my_team=player_id%2
+        trunfo_card=games[room].trunfo_card
+        card=bots[players_type[room][player_id]](hand,table_deck,trunfo, played_7, deck_size, played_cards, team_score, global_score, my_team, trunfo_card)
         output_type=process_play(room, player_id, card)
         next_player=games[room].current_player_number
         if players_type[room][next_player]!="player" and output_type not in ("game over", "round over"): 
@@ -66,9 +78,13 @@ def bot_turn(room, player_id):
 @socketio.on("join_room")
 def handle_join(data):
     room=data['room']
+    if room >= max_rooms:
+        return
+    tables[room]['size']+=1
+    socketio.emit('change_table', tables)
     print(f"inciando entrada na sala {room}...")
     join_room(room)
-
+    
     with get_room_lock(room):
         if room not in games:
             players_id[room]=[]
@@ -107,6 +123,10 @@ def handle_join(data):
     
 @socketio.on('start_game')
 def start_game(room):
+    if room >= max_rooms:
+        return 
+    tables[room]['game_started']=True 
+    socketio.emit('change_table', tables)
     with get_room_lock(room):
         if room not in games or (not games[room] is None and game_started[room]):
             return
@@ -151,9 +171,13 @@ def handle_end_round(room):
 
 @socketio.on('finish_game')
 def handle_finish_game(room): 
+    if room >= max_rooms:
+        return
     with get_room_lock(room):
         game_started[room]=False
         games[room]=None
+        tables[room]['game_started']=False 
+        socketio.emit('change_table', tables)
 
 @socketio.on('change_bot')
 def handle_change_bot(room, id, new_type):
@@ -166,12 +190,18 @@ def handle_request_state(room):
         if games[room]:
             emit('get-game-state', games[room].get_general_state())
 
+@socketio.on('request_tables')
+def send_tables():
+    emit('change_table', tables) 
+
 @socketio.on('disconnect')
 def handle_disconnect():
     if request.sid not in players_sid:
         print("Jogador não encontrado")
         return 
     room, id=players_sid[request.sid]["room"],players_sid[request.sid]["id"]
+    tables[room]['size']-=1
+    socketio.emit('change_table', tables)
     with get_room_lock(room):
         players_id[room].remove(id) 
         del players_sid_reverse[room][id]
@@ -194,10 +224,10 @@ def handle_disconnect():
 def index():
     return render_template("index.html") 
 
-@app.route("/game")
-def game_page():
-    return render_template("game.html")
-
+@app.route("/game/<int:room>")
+def game_page(room):
+    return render_template("game.html", room=room)
 
 if __name__ ==  '__main__':
-    socketio.run(app, debug=True, port=8080)
+    port=int(os.environ.get("PORT", 8080))
+    socketio.run(app,  host="0.0.0.0", port=port, debug=False)

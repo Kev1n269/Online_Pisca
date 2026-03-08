@@ -1,6 +1,6 @@
 const {createApp,onMounted,  ref, reactive, component, computed, nextTick} = Vue;
 
-const socket=io("http://localhost:8080")
+const socket=io()
 
 const getRelativePosition=(currentPlayer, targetPlayer)=>{
     const diff=((currentPlayer-targetPlayer)%4+4)%4; 
@@ -27,8 +27,8 @@ const positionConfig={
 },
 "change-bot-container-finished-game":{
     "right": "absolute right-48 top-1/2 -translate-y-1/2 ",
-    "top": "absolute top-28 left-1/2 -translate-x-1/2", 
-    "left": "absolute left-48 top-1/2 -translate-y-1/2", 
+    "top": "absolute top-20 left-1/2 -translate-x-1/2", 
+    "left": "absolute left-40 top-1/2 -translate-y-1/2", 
 },
 "card":{
     "bottom": "w-[84px] h-[124px] pixel-art shadow-2xl rounded cursor-pointer transition-transform duration-100 hover:-translate-y-5",
@@ -188,7 +188,8 @@ const processQueue=async()=>{
 
 const app=createApp({
     setup() {
-        const room=ref(1);
+        const appDiv=document.getElementById('app');
+        const room=ref(parseInt(appDiv.dataset.room));
         console.log("conectando com o servidor...");
         socket.emit('join_room', {'room': room.value});
         const isFinishedOnce=ref(false);
@@ -524,7 +525,7 @@ template: `
 <deck :deck-size="deckSize" :is-shuffling="isShuffling" :max-visible-cards="40"></deck>
 <img 
 v-if=" trunfoCard!=='' "
-:src="'static/assets/cards/'+trunfoCard+'.png'"
+:src="'/static/assets/cards/'+trunfoCard+'.png'"
 class="absolute left-8 -bottom-2 rotate-[80deg] w-[63px] h-[93px] shadow-2xl rounded pixel-art"
 </div>
 </div>
@@ -560,7 +561,8 @@ template: `
 <transition-group name="table-stack" tag="div" class="relative w-full h-full" @enter="enter" @leave="leave">
 <img v-for="(card,index) in deck"
     :key="card['id']"
-    :src="'static/assets/cards/'+card['id']+'.png'"
+    :src="'/static/assets/cards/'+card['id']+'.png'"
+    :alt="card['id']"
     :class="'w-[84px] h-[124px] pixel-art shadow-2xl rounded ' + difStyleArray[card['player']]"
     :data-team="card['player']%2"
 />
@@ -636,7 +638,8 @@ name="player-hand"
 <div v-for="(uid,index) in playersCardsUid[id]" :key="id===playerId ? playerDeck[index]['id'] : uid" class="inline-block" :id="'player-hand-'+id+'-'+index">
 <div :class="difCardWrapperStyle[id]">
 <img 
-:src="'static/assets/cards/' + (id===playerId ? playerDeck[index]['id'] : 'CardBack_v12') +'.png'"
+:src="'/static/assets/cards/' + (id===playerId ? playerDeck[index]['id'] : 'CardBack_v12') +'.png'"
+:alt="playerDeck[index]['id']"
 :class="difCardStyle[id]"
 @click="id===playerId ? playCard(index, $event) : null"
 />

@@ -158,7 +158,7 @@ class game:
             if playerCard['number']=='A' and playerCard['naipe']==self.trunfo:
                 have_A=True
         if card["naipe"]==self.trunfo:
-            if card["number"]=='7' and len(self.table_deck)==3 and (len(current_player)==3 or (have_A and len(current_player)>=2)):  
+            if card["number"]=='7' and len(self.table_deck)==3 and (len(current_player)==3 or (not have_A and len(current_player)>=2)):  
                 raise ValueError("7 jogado no pé")
             if card["number"]=='A' and not self.played_7 and len(current_player)!=1: 
                 raise ValueError("Ás jogado antes do 7")

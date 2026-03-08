@@ -1,7 +1,12 @@
 {% extends "layout.html" %}
 
+{%block head_extra%}
+<script src="{{url_for('static', filename='js/app.js')}}" defer></script>
+{%endblock%}
+
+
 {%block content%}
-<div id="app" v-cloak>
+<div id="app" data-room="{{ room }}" v-cloak>
     <div class="relative w-full h-screen overflow-hidden  bg-gradient-to-br from-green-900 via-green-700 to-green-800 shadow-[inset_0_0_100px_rgba(0,0,0,0.6)]">
         <players-deck :player-id="id" :players-cards-uid="playersCardsUid" :player-deck="playerDeck" @play-card="playCard" class="absolute inset-0 z-50"></players-deck>
         <discart-stack :deck="tableDeck" :player-id="id" class="absolute inset-0 z-10"></discart-stack>
@@ -18,6 +23,6 @@
             </div>
         </transition>
         <h1 v-if="!isHost && !gameStarded && !isFinishedOnce" class="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 text-3xl font-bold text-amber-400/90 tracking-widest drop-shadow-lg">Esperando o host iniciar a partida...</h1>
-        <change-bot v-if="isHost && !gameStarded" :player-id="id" :players-type="playersType" :is-finished-once="isFinishedOnce" @change-bot="changeBot" class="absolute inset-0"></change-bot>
+        <change-bot v-if="isHost && !gameStarded" :player-id="id" :players-type="playersType" :is-finished-once="isFinishedOnce" @change-bot="changeBot" class="absolute inset-0 "></change-bot>
 </div>
 {%endblock%}
