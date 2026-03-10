@@ -180,10 +180,15 @@ const addInQueue=(actionfn)=>{
 const processQueue=async()=>{
     if(isProcessing || globalActionQueue.length===0) return; 
         isProcessing=true;
+        try{
         const fn=globalActionQueue.shift(); 
-        await fn(); 
+        await fn();
+    }catch(e){
+        console.log("erro na fila:", e); 
+    }finally{ 
         isProcessing=false; 
         await processQueue(); 
+}
 }
 
 const app=createApp({
