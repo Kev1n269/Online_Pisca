@@ -171,20 +171,22 @@ let global_card_counter=0;
 
 let globalActionQueue=[];
 let isProcessing=false;
-
+let queueCounter=0;
 const addInQueue=(actionfn)=>{
-    globalActionQueue.push(actionfn); 
+    queueCounter++;
+    globalActionQueue.push([actionfn, queueCounter]); 
     processQueue();
 }
 
 const processQueue=async()=>{
     if(isProcessing || globalActionQueue.length===0) return; 
         isProcessing=true;
+        const [fn, id]=globalActionQueue.shift(); 
+        console.log(`executando função de id ${id}`); 
         try{
-        const fn=globalActionQueue.shift(); 
         await fn();
     }catch(e){
-        console.log("erro na fila:", e); 
+        console.log(`erro na fila de ${id}:`, e); 
     }finally{ 
         isProcessing=false; 
         await processQueue(); 
