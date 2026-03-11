@@ -27,9 +27,9 @@ const positionConfig={
     "left": "absolute left-72 top-1/2 -translate-y-1/2", 
 },
 "change-bot-container-finished-game":{
-    "right": "absolute right-48 top-1/2 -translate-y-1/2 ",
+    "right": "absolute right-72 top-1/2 -translate-y-1/2 ",
     "top": "absolute top-20 left-1/2 -translate-x-1/2", 
-    "left": "absolute left-40 top-1/2 -translate-y-1/2", 
+    "left": "absolute left-64 top-1/2 -translate-y-1/2", 
 },
 "card":{
     "bottom": "w-[84px] h-[124px] pixel-art shadow-2xl rounded cursor-pointer transition-transform duration-100 hover:-translate-y-5",
@@ -78,9 +78,9 @@ else
 }
 
 const enterPlayerDeck=(card, done)=>{
+    card.style.opacity='0'; 
     waitImage(card, async ()=>{    
 const deck=document.querySelector('#main-deck'); 
-card.style.opacity='0'; 
 
 requestAnimationFrame(()=>{
 const deckReact=deck.getBoundingClientRect(); 
@@ -115,9 +115,8 @@ const enterDiscartStack=(card,done)=>{
         console.log("erro: carta não encontrada"); 
         return; 
     }
-waitImage(card, ()=>{
 card.style.opacity='0'; 
-
+waitImage(card, ()=>{
 requestAnimationFrame(()=>{
 const cardReact=card.getBoundingClientRect();  
 
@@ -228,7 +227,17 @@ const app=createApp({
         const gameStarded=ref(false);
         const mainDeckSize=computed(()=>Math.max(deckSize.value-1,0)); 
         const endGame=ref(false); 
-        const winnerText=ref(""); 
+        const winnerText={
+            'en':  {
+                'win': 'Victory!', 
+                'lose': 'Defeat!'
+                },
+            'pt': {
+                'win': 'Vitória!', 
+                'lose': 'Derrota!'
+                }
+            };  
+        const iWon=ref(false); 
         const winners=ref([-1,-1]); 
         const isShuffling=ref(false); 
         const playersCardsUid=ref([[],[],[], []]); 
@@ -363,14 +372,7 @@ const app=createApp({
             deckSize.value=40; 
             endGame.value=true;
             winners.value=data['winners']; 
-            if(winners.value[0]===id.value%2)
-                winnerText.value=lang.value==="en"
-            ? "Congratulations! You won!"
-            : "Parabéns! Você venceu!";
-            else
-                winnerText.value=lang.value==="en"
-            ? "You lost! Better luck next time!"
-            : "Você perdeu! Mais sorte na próxima!";
+            iWon.value=winners.value[0]===id.value%2;
             while(tableDeck.value.length>0)
                 tableDeck.value.pop(); 
             socket.emit('finish_game', room.value);
@@ -432,7 +434,6 @@ const app=createApp({
             addInQueue(()=>{
             console.log("iniciando jogo..."); 
             endGame.value=false;
-            winnerText.value=""; 
             socket.emit('start_game', room.value);
             });
         }
@@ -463,8 +464,8 @@ const app=createApp({
         }
         });
 
-    return {room, id, trunfoCard, deckSize, playerDeck, ownTeamScore, opponentTeamScore, tableDeck, currentPlayer, playersCardsUid,changeBot, lang,
-isShuffling, playedCards, isHost, gameStarded, mainDeckSize, endGame, winners, winnerText, playersType, isFinishedOnce, startGame,  playCard}
+    return {room, id, trunfoCard, deckSize, playerDeck, ownTeamScore, opponentTeamScore, tableDeck, currentPlayer, playersCardsUid, lang, iWon,
+isShuffling, playedCards, isHost, gameStarded, mainDeckSize, endGame, winners, winnerText, playersType, isFinishedOnce, changeBot, startGame,  playCard}
     }
 });
 
@@ -685,14 +686,18 @@ required: true
 opponentTeamScore: {
 type: Number, 
 required: true 
+}, 
+lang: {
+    type: String, 
+    default: "en"
 }
 },
 template: `
 <div class="h-full w-full"> 
-    <div class="fixed top-8 left-36 border-4 border-double bg-stone-900 border-orange-500 bg-gr-500 rounded-lg p-3 text-base shadow-lg  w-40 flex-col">
-        <p class="text-emerald-400 font-bold">Seu time: ((ownTeamScore))</p>
+    <div class="fixed top-8 left-36 border-4 border-double bg-stone-900 border-orange-500 rounded-lg p-3 text-base shadow-lg  w-40">
+        <p class="text-emerald-400 font-bold">((lang==='en' ? 'Your team' : 'Seu time')): ((ownTeamScore))</p>
         <hr class="border-t-2 border-yellow-700 my-2"/>
-        <p class="text-red-400 font-bold">Adversários: ((opponentTeamScore))</p>
+        <p class="text-red-400 font-bold">((lang==='en' ? 'Opponents' : 'Adversários')): ((opponentTeamScore))</p>
     </div>
 </div>
 `
@@ -826,7 +831,7 @@ template: `
 
 <div v-if="playersType[id]!=='player'" @mouseenter="cancelCloserTimer(id)" @mouseleave="startCloserTimer(id)" :class="difContainerStyle[id] + ' z-50' ">
 <button @click="showMenu[id]=!showMenu[id]" class="px-3 py-1 text-base text-amber-200 font-semibold bg-green-800 border-2 border-amber-400/60 rounded-full shadow-md hover:bg-green-700 hover:border-amber-400/90 ring-1 ring-amber-200/40 transition-all duration-150 cursor-pointer">
-(( playersType[id] === 'player' ? '' : (lang=="en" ? 'Bot with level ' : 'Bot de nível ') + to_text(playersType[id]) ))
+(( playersType[id] === 'player' ? '' : ( lang==='en' ? to_text(playersType[id]) + ' Bot' : 'Bot de nível ' + to_text(playersType[id]) ) ))
 </button>
 
 <div v-show="showMenu[id]" @mouseenter="cancelCloserTimer(id)" @mouseleave="startCloserTimer(id)" class="absolute translate-x-4 translate-y-2 flex flex-col gap-1 p-2 w-24 bg-green-900/90 border border-double border-amber-400/30 rounded-lg shadow-xl ring-1 ring-amber-300/50 transition-all duration-300 cursor-pointer"> 

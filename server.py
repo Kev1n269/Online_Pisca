@@ -21,7 +21,7 @@ game_started={}
 host={}
 rooms_lock={}
 tables=[]
-max_rooms=30
+max_rooms=12
 for i in range(max_rooms):
     tables.append({'size': 0, 'game_started': False, 'id': i}) 
 

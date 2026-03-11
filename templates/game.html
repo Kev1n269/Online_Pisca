@@ -11,7 +11,7 @@
         <players-deck :player-id="id" :players-cards-uid="playersCardsUid" :player-deck="playerDeck" @play-card="playCard" class="absolute inset-0 z-50"></players-deck>
         <discart-stack :deck="tableDeck" :player-id="id" class="absolute inset-0 z-10"></discart-stack>
         <main-deck id="main-deck" :is-shuffling="isShuffling" :deck-size="mainDeckSize" :trunfo-card="trunfoCard" class="absolute inset-0"></main-deck>
-        <scoreboard v-if="gameStarded" :own-team-score="ownTeamScore['global']" :opponent-team-score="opponentTeamScore['global']" class="absolute inset-0"></scoreboard>
+        <scoreboard v-if="gameStarded" :own-team-score="ownTeamScore['global']" :opponent-team-score="opponentTeamScore['global']" :lang="lang" class="absolute inset-0"></scoreboard>
         <players-stack :player-id="id" :played-cards="playedCards" :own-team-score="ownTeamScore['regional']" :opponent-team-score="opponentTeamScore['regional']" class="absolute inset-0"></players-stack>
         <transition name="startButton">
         <button v-if="isHost && !gameStarded" @click="startGame()" class="absolute bottom-48 left-1/2 -translate-x-1/2 z-50 w-48 h-28 bg-amber-400 ring-2 ring-amber-300/40 text-black text-xl border-2 border-neutral-800 rounded-full cursor-pointer hover:bg-amber-600 hover:ring-amber-200/60 transition-all duration-200">((lang=='en' ? 'Start Game': 'Começar o jogo'))</button>
@@ -19,7 +19,7 @@
         <transition name="endGame">
             <div v-if="endGame" class="absolute inset-0 z-40 flex flex-col items-center justify-center gap-4 bg-black/40">
                 <p class="-translate-y-12 text-amber-400 uppercase tracking-widest text-2xl">((lang=='en' ? 'Game Over': 'Fim de jogo'))</p>
-                <h1 class="-translate-y-12 text-6xl text-amber-500 font-bold" style="font-family: Georgia, 'Times New Roman', Times, serif;">((winnerText))</h1>
+                <h1 class="-translate-y-12 text-7xl text-amber-500 font-bold" style="font-family: Georgia, 'Times New Roman', Times, serif;">(( winnerText[lang][ (iWon ? 'win' : 'lose') ] ))</h1>
             </div>
         </transition>
         <h1 v-if="!isHost && !gameStarded && !isFinishedOnce" class="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 text-3xl font-bold text-amber-400/90 tracking-widest drop-shadow-lg">((lang=='en' ? 'Waiting for the host to start the game...' : 'Esperando o host iniciar o jogo...'))</h1>
