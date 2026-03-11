@@ -1,5 +1,6 @@
 const {createApp,onMounted,  ref, component, computed, nextTick} = Vue;
-
+import {lang} from  "./global.js"; 
+    
 const socket=io()
 
 const getRelativePosition=(currentPlayer, targetPlayer)=>{
@@ -208,7 +209,6 @@ const processQueue=async()=>{
 
 const app=createApp({
     setup() {
-        const lang=ref("en"); 
         const appDiv=document.getElementById('app');
         const room=ref(parseInt(appDiv.dataset.room));
         console.log("conectando com o servidor...");

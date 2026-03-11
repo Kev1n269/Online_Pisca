@@ -18,11 +18,15 @@
 
     {%block head_extra%}{%endblock%}  
   </head>
-  <body class="">
+  <body>
 
   <header>
-  {%block header%}
-  {%endblock%}
+    <div>
+    <img id="flag"
+     src="/static/assets/flags/pt.svg" 
+     onclick="toggleLang()" 
+     class="fixed top-4 right-6 h-8 w-auto shadow-lg cursor-pointer"/>
+     </div>
   </header>
 
   <main>

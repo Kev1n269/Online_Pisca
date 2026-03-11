@@ -1,11 +1,10 @@
 const {createApp,ref} = Vue;
-
+import {lang} from "./global.js";
 const socket=io();
 
 const app=createApp({
 setup(){
 const tables=ref([]); 
-const lang=ref("en"); 
 socket.emit('request_tables');
 socket.on('change_table', data => {
     tables.value=data.filter(table =>

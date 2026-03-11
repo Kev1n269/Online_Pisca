@@ -222,7 +222,7 @@ def handle_disconnect():
         
 @app.route("/")
 def index():
-    return render_template("index.html") 
+    return render_template("index.html", lang="en") 
 
 @app.route("/game/<int:room>")
 def game_page(room):
