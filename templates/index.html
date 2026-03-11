@@ -1,7 +1,7 @@
 {%extends "layout.html"%}
 
 {%block head_extra%}
-<script src="{{url_for('static', filename='js/index_page.js')}}" defer></script>
+<script type="module" src="{{url_for('static', filename='js/index_page.js')}}"></script>
 {%endblock%}
 
 {%block content%}
