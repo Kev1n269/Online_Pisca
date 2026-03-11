@@ -1,4 +1,4 @@
-const {createApp,onMounted,  ref, reactive, component, computed, nextTick} = Vue;
+const {createApp,onMounted,  ref, component, computed, nextTick} = Vue;
 
 const socket=io()
 
@@ -215,23 +215,23 @@ const app=createApp({
         socket.emit('join_room', {'room': room.value});
         const isFinishedOnce=ref(false);
         const trunfoCard=ref("");   
-        const playersType=reactive([],[],[],[]); 
+        const playersType=ref([],[],[],[]); 
         const deckSize=ref(40); 
-        const playerDeck=reactive([]);
+        const playerDeck=ref([]);
         const ownTeamScore=ref({"regional": 0, "global": 0});
         const opponentTeamScore=ref({"regional": 0, "global": 0});
-        const tableDeck=reactive([]);
+        const tableDeck=ref([]);
         const currentPlayer=ref(0);
         const id=ref(0);
-        const playedCards=reactive([0,0]);
+        const playedCards=ref([0,0]);
         const isHost=ref(false);
         const gameStarded=ref(false);
         const mainDeckSize=computed(()=>Math.max(deckSize.value-1,0)); 
         const endGame=ref(false); 
         const winnerText=ref(""); 
-        const winners=reactive([-1,-1]); 
+        const winners=ref([-1,-1]); 
         const isShuffling=ref(false); 
-        const playersCardsUid=reactive([[],[],[], []]); 
+        const playersCardsUid=ref([[],[],[], []]); 
 
         socket.on('inital-data', data => {
             console.log("conectado na sala", room.value);
@@ -364,9 +364,13 @@ const app=createApp({
             endGame.value=true;
             winners.value=data['winners']; 
             if(winners.value[0]===id.value%2)
-                winnerText.value="Congratulations! You won!";
+                winnerText.value=lang.value==="en"
+            ? "Congratulations! You won!"
+            : "Parabéns! Você venceu!";
             else
-                winnerText.value="You lost! Better luck next time!";
+                winnerText.value=lang.value==="en"
+            ? "You lost! Better luck next time!"
+            : "Você perdeu! Mais sorte na próxima!";
             while(tableDeck.value.length>0)
                 tableDeck.value.pop(); 
             socket.emit('finish_game', room.value);
