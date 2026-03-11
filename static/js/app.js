@@ -826,7 +826,7 @@ template: `
 
 <div v-if="playersType[id]!=='player'" @mouseenter="cancelCloserTimer(id)" @mouseleave="startCloserTimer(id)" :class="difContainerStyle[id] + ' z-50' ">
 <button @click="showMenu[id]=!showMenu[id]" class="px-3 py-1 text-base text-amber-200 font-semibold bg-green-800 border-2 border-amber-400/60 rounded-full shadow-md hover:bg-green-700 hover:border-amber-400/90 ring-1 ring-amber-200/40 transition-all duration-150 cursor-pointer">
-(( playersType[id] == 'player' ? '' : 'Bot with level ' + to_text(playersType[id]) ))
+(( playersType[id] === 'player' ? '' : (lang=="en" ? 'Bot with level ' : 'Bot de nível ') + to_text(playersType[id]) ))
 </button>
 
 <div v-show="showMenu[id]" @mouseenter="cancelCloserTimer(id)" @mouseleave="startCloserTimer(id)" class="absolute translate-x-4 translate-y-2 flex flex-col gap-1 p-2 w-24 bg-green-900/90 border border-double border-amber-400/30 rounded-lg shadow-xl ring-1 ring-amber-300/50 transition-all duration-300 cursor-pointer"> 

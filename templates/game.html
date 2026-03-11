@@ -23,6 +23,6 @@
             </div>
         </transition>
         <h1 v-if="!isHost && !gameStarded && !isFinishedOnce" class="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 text-3xl font-bold text-amber-400/90 tracking-widest drop-shadow-lg">((lang=='en' ? 'Waiting for the host to start the game...' : 'Esperando o host iniciar o jogo...'))</h1>
-        <change-bot v-if="isHost && !gameStarded" :player-id="id" :players-type="playersType" :is-finished-once="isFinishedOnce" @change-bot="changeBot" class="absolute inset-0 "></change-bot>
+        <change-bot v-if="isHost && !gameStarded" :player-id="id" :players-type="playersType" :is-finished-once="isFinishedOnce" :lang="lang" @change-bot="changeBot" class="absolute inset-0 "></change-bot>
 </div>
 {%endblock%}
