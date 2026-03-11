@@ -67,7 +67,17 @@ for(const element of vector2){
 }
 }
 
+const waitImage=(card, cb)=>{
+const img=card.querySelector('img') || card;
+if(!img) return; 
+if(img.complete)
+    cb();
+else
+    img.addEventListener('load', cb, {once: true});
+}
+
 const enterPlayerDeck=(card, done)=>{
+    waitImage(card, async ()=>{    
 const deck=document.querySelector('#main-deck'); 
 card.style.opacity='0'; 
 
@@ -87,6 +97,7 @@ card.style.transform="translate(0,0) scale(1)"
 setTimeout(done, 800);
 }); 
 });
+    }); 
 };
 
 let lastCardReact=null;
@@ -103,6 +114,7 @@ const enterDiscartStack=(card,done)=>{
         console.log("erro: carta não encontrada"); 
         return; 
     }
+waitImage(card, ()=>{
 card.style.opacity='0'; 
 
 requestAnimationFrame(()=>{
@@ -126,6 +138,7 @@ setTimeout(()=>{
 }, 500);
 
 }); 
+});
 });
 
 };
@@ -195,29 +208,30 @@ const processQueue=async()=>{
 
 const app=createApp({
     setup() {
+        const lang=ref("en"); 
         const appDiv=document.getElementById('app');
         const room=ref(parseInt(appDiv.dataset.room));
         console.log("conectando com o servidor...");
         socket.emit('join_room', {'room': room.value});
         const isFinishedOnce=ref(false);
         const trunfoCard=ref("");   
-        const playersType=ref([],[],[],[]); 
+        const playersType=reactive([],[],[],[]); 
         const deckSize=ref(40); 
-        const playerDeck=ref([]);
+        const playerDeck=reactive([]);
         const ownTeamScore=ref({"regional": 0, "global": 0});
         const opponentTeamScore=ref({"regional": 0, "global": 0});
-        const tableDeck=ref([]);
+        const tableDeck=reactive([]);
         const currentPlayer=ref(0);
         const id=ref(0);
-        const playedCards=ref([0,0]);
+        const playedCards=reactive([0,0]);
         const isHost=ref(false);
         const gameStarded=ref(false);
         const mainDeckSize=computed(()=>Math.max(deckSize.value-1,0)); 
         const endGame=ref(false); 
         const winnerText=ref(""); 
-        const winners=ref([-1,-1]); 
+        const winners=reactive([-1,-1]); 
         const isShuffling=ref(false); 
-        const playersCardsUid=ref([[],[],[], []]); 
+        const playersCardsUid=reactive([[],[],[], []]); 
 
         socket.on('inital-data', data => {
             console.log("conectado na sala", room.value);
@@ -350,9 +364,9 @@ const app=createApp({
             endGame.value=true;
             winners.value=data['winners']; 
             if(winners.value[0]===id.value%2)
-                winnerText.value="Parabéns! Você venceu!";
+                winnerText.value="Congratulations! You won!";
             else
-                winnerText.value="Que pena. Você perdeu!";
+                winnerText.value="You lost! Better luck next time!";
             while(tableDeck.value.length>0)
                 tableDeck.value.pop(); 
             socket.emit('finish_game', room.value);
@@ -445,7 +459,7 @@ const app=createApp({
         }
         });
 
-    return {room, id, trunfoCard, deckSize, playerDeck, ownTeamScore, opponentTeamScore, tableDeck, currentPlayer, playersCardsUid,changeBot,
+    return {room, id, trunfoCard, deckSize, playerDeck, ownTeamScore, opponentTeamScore, tableDeck, currentPlayer, playersCardsUid,changeBot, lang,
 isShuffling, playedCards, isHost, gameStarded, mainDeckSize, endGame, winners, winnerText, playersType, isFinishedOnce, startGame,  playCard}
     }
 });
@@ -646,7 +660,7 @@ name="player-hand"
 <div :class="difCardWrapperStyle[id]">
 <img 
 :src="'/static/assets/cards/' + (id===playerId ? playerDeck[index]['id'] : 'CardBack_v12') +'.png'"
-:alt="playerDeck[index]['id']"
+:alt="id==playerId ? playerDeck[index]['id'] : 'card_img' "
 :class="difCardStyle[id]"
 @click="id===playerId ? playCard(index, $event) : null"
 />
@@ -749,7 +763,11 @@ app.component("change-bot", {
     isFinishedOnce: {
         type: Boolean,
         required: true
-    } 
+    }, 
+    lang: {
+        type: String, 
+        default: "en"
+    }
 },
 setup(props, {emit}){
 const difContainerStyle=computed(()=>{
@@ -764,12 +782,25 @@ const difContainerStyle=computed(()=>{
 
 const ids=[0,1,2,3];
 const showMenu=ref([false,false,false,false]); 
-const to_portuguese=(text)=>{
-if(text==="easy_bot") return "Fácil"
-else if(text==="medium_bot") return "Médio"
-else if(text==="hard_bot") return "Difícil"
-else return text
+
+const to_text=(text)=>{
+
+    if(props.lang==="en"){
+if(text==="easy_bot") return "Easy";
+else if(text==="medium_bot") return "Medium";
+else if(text==="hard_bot") return "Hard";
+else return text;
+    }
+
+    else{
+if(text==="easy_bot") return "Fácil";
+else if(text==="medium_bot") return "Médio";
+else if(text==="hard_bot") return "Difícil";
+else return text;   
+    }
+
 }
+
 const levels=["easy_bot", "medium_bot", "hard_bot"]
 const selectBot=(id, bot)=>{
 emit('changeBot', id, bot);
@@ -783,7 +814,7 @@ showMenu.value[id]=false;
 const cancelCloserTimer=(id)=>{
 clearTimeout(menuCloseTimer[id]); 
 }
-return {difContainerStyle, ids, showMenu, levels, to_portuguese, selectBot, startCloserTimer, cancelCloserTimer}
+return {difContainerStyle, ids, showMenu, levels, to_text, selectBot, startCloserTimer, cancelCloserTimer}
 },
 template: `
 <div class="w-full h-full">
@@ -791,7 +822,7 @@ template: `
 
 <div v-if="playersType[id]!=='player'" @mouseenter="cancelCloserTimer(id)" @mouseleave="startCloserTimer(id)" :class="difContainerStyle[id] + ' z-50' ">
 <button @click="showMenu[id]=!showMenu[id]" class="px-3 py-1 text-base text-amber-200 font-semibold bg-green-800 border-2 border-amber-400/60 rounded-full shadow-md hover:bg-green-700 hover:border-amber-400/90 ring-1 ring-amber-200/40 transition-all duration-150 cursor-pointer">
-(( playersType[id] == 'player' ? '' : 'Bot de nível ' + to_portuguese(playersType[id]) ))
+(( playersType[id] == 'player' ? '' : 'Bot with level ' + to_text(playersType[id]) ))
 </button>
 
 <div v-show="showMenu[id]" @mouseenter="cancelCloserTimer(id)" @mouseleave="startCloserTimer(id)" class="absolute translate-x-4 translate-y-2 flex flex-col gap-1 p-2 w-24 bg-green-900/90 border border-double border-amber-400/30 rounded-lg shadow-xl ring-1 ring-amber-300/50 transition-all duration-300 cursor-pointer"> 
@@ -801,7 +832,7 @@ level===playersType[id]
 ? 'text-amber-400 font-bold hover:bg-green-700/60' 
 : 'text-amber-100 hover:bg-green-700/60'
 ]">
-(( to_portuguese(level) ))
+(( to_text(level) ))
 </button>
 </div>
 

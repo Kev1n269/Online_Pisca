@@ -14,15 +14,15 @@
         <scoreboard v-if="gameStarded" :own-team-score="ownTeamScore['global']" :opponent-team-score="opponentTeamScore['global']" class="absolute inset-0"></scoreboard>
         <players-stack :player-id="id" :played-cards="playedCards" :own-team-score="ownTeamScore['regional']" :opponent-team-score="opponentTeamScore['regional']" class="absolute inset-0"></players-stack>
         <transition name="startButton">
-        <button v-if="isHost && !gameStarded" @click="startGame()" class="absolute bottom-48 left-1/2 -translate-x-1/2 z-50 w-48 h-28 bg-amber-400 ring-2 ring-amber-300/40 text-black text-xl border-2 border-neutral-800 rounded-full cursor-pointer hover:bg-amber-600 hover:ring-amber-200/60 transition-all duration-200">Começar o jogo</button>
+        <button v-if="isHost && !gameStarded" @click="startGame()" class="absolute bottom-48 left-1/2 -translate-x-1/2 z-50 w-48 h-28 bg-amber-400 ring-2 ring-amber-300/40 text-black text-xl border-2 border-neutral-800 rounded-full cursor-pointer hover:bg-amber-600 hover:ring-amber-200/60 transition-all duration-200">Start game</button>
         </transition>
         <transition name="endGame">
             <div v-if="endGame" class="absolute inset-0 z-40 flex flex-col items-center justify-center gap-4 bg-black/40">
-                <p class="-translate-y-12 text-amber-400 uppercase tracking-widest text-2xl">Fim de jogo</p>
+                <p class="-translate-y-12 text-amber-400 uppercase tracking-widest text-2xl">Game over</p>
                 <h1 class="-translate-y-12 text-6xl text-amber-500 font-bold" style="font-family: Georgia, 'Times New Roman', Times, serif;">((winnerText))</h1>
             </div>
         </transition>
-        <h1 v-if="!isHost && !gameStarded && !isFinishedOnce" class="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 text-3xl font-bold text-amber-400/90 tracking-widest drop-shadow-lg">Esperando o host iniciar a partida...</h1>
+        <h1 v-if="!isHost && !gameStarded && !isFinishedOnce" class="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 text-3xl font-bold text-amber-400/90 tracking-widest drop-shadow-lg">Waiting for the host to start the game...</h1>
         <change-bot v-if="isHost && !gameStarded" :player-id="id" :players-type="playersType" :is-finished-once="isFinishedOnce" @change-bot="changeBot" class="absolute inset-0 "></change-bot>
 </div>
 {%endblock%}
