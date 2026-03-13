@@ -3,10 +3,11 @@
 An online card game for 4 players (2 against 2) called “Bisca.” This is a local version of the game with several rules that differ from the original. It is a version from Espírito Santo, a state in Brazil. 
 
 ## 🎮 How to play 
-1. ***enter the game at*** https://online-bisca.onrender.com
-2. chooce a room to enter
-3. start the game with bots or wait for other people to enter in the room
-4. Have fun!
+1. ***Go to the game at*** https://online-bisca.onrender.com
+2. Select your language (English or Portuguese) using the flag in the upper right corner
+3. Chooce a room to join
+4. Start the game with bots or wait for other people to join the room
+5. Have fun!
 
 ## 📜 Rules 
 
@@ -18,7 +19,8 @@ The game begins with the removal of a card to represent the trump suit, which ca
 - The trump ace cannot be played before the trump 7 (unless there is no other option).
 - The trump 7 cannot be played if you are the last to play in that hand (unless there is no other option).
 - The trump 2 can be exchanged at any time when the deck is not empty for the trump card drawn at the start of the game.
-- If you are the first to play and play the 7 of trumps and no opponent plays the A of trumps, you earn 1 global point. -If an opponent plays the 7 of trumps and you respond with an A of trumps (beating the 7 with the A), you earn 2 global points.
+- If you are the first to play and play the 7 of trumps and no opponent plays the A of trumps, you earn 1 global point.
+- If an opponent plays the 7 of trumps and you respond with an A of trumps (beating the 7 with the A), it's a "healing" and you earn 2 global points.
 
 ## 🛠️ Technologies 
 - Javascript
