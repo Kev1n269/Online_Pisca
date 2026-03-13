@@ -288,6 +288,7 @@ const app=createApp({
             addInQueue(async ()=>{
             ownTeamScore.value['global']=data['score'][id.value%2]; 
             opponentTeamScore.value['global']=data['score'][(id.value+1)%2]; 
+            tableDeck.value.push({"id": data['card'], "player": currentPlayer.value});
             if(currentPlayer.value!==id.value)
                 playersCardsUid.value[currentPlayer.value].pop();
             tableDeck.value.push({"id": data['card'], "player": currentPlayer.value});
