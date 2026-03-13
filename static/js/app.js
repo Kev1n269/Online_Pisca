@@ -291,7 +291,6 @@ const app=createApp({
             tableDeck.value.push({"id": data['card'], "player": currentPlayer.value});
             if(currentPlayer.value!==id.value)
                 playersCardsUid.value[currentPlayer.value].pop();
-            tableDeck.value.push({"id": data['card'], "player": currentPlayer.value});
             currentPlayer.value=data['next_player']; 
             await wait(1000); 
             });
