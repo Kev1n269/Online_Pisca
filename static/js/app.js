@@ -113,10 +113,10 @@ const leavePlayerDeck=(card, done)=> {
 const enterDiscartStack=(card,done)=>{
     if(!lastCardReact){
         console.log("erro: carta não encontrada"); 
-        return; 
+        done();
+        return;  
     }
 card.style.opacity='0'; 
-waitImage(card, ()=>{
 requestAnimationFrame(()=>{
 const cardReact=card.getBoundingClientRect();  
 
@@ -139,8 +139,6 @@ setTimeout(()=>{
 
 }); 
 });
-});
-
 };
 
 let lastWinner=null; 
@@ -195,7 +193,6 @@ const processQueue=async()=>{
     if(isProcessing || globalActionQueue.length===0) return; 
         isProcessing=true;
         const [fn, id]=globalActionQueue.shift(); 
-        console.log(`executando função de id ${id}`); 
         try{
         await fn();
     }catch(e){
